@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kreditprüfung</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Kreditprüfung</h1>
+  <nav>
+    <button id="nav-pruefung" type="button">Kreditprüfung</button>
+    <button id="nav-regeln" type="button">Regelwerk</button>
+  </nav>
+</header>
+
+<main>
+  <!-- Schritt 1: Typ-Auswahl -->
+  <section id="view-typ" class="view">
+    <h2>Wer stellt den Kreditantrag?</h2>
+    <div class="auswahl">
+      <button type="button" class="gross" data-typ="privat">Privatperson / Haushalt</button>
+      <button type="button" class="gross" data-typ="unternehmen">Unternehmen</button>
+    </div>
+  </section>
+
+  <!-- Schritt 2: Antrag -->
+  <section id="view-antrag" class="view versteckt">
+    <h2 id="antrag-titel">Angaben zum Antrag</h2>
+    <form id="form-antrag">
+      <div class="feld">
+        <label for="einkommen">Jahreseinkommen bzw. Jahresgewinn (CHF)</label>
+        <input type="number" id="einkommen" min="0" step="100" value="120000" required>
+      </div>
+      <div class="feld">
+        <label for="vermoegen">Vermögen (CHF)</label>
+        <input type="number" id="vermoegen" min="0" step="100" value="60000" required>
+      </div>
+      <div class="feld">
+        <label for="wohnkosten">Wohnkosten pro Monat (CHF)</label>
+        <input type="number" id="wohnkosten" min="0" step="10" value="1600" required>
+      </div>
+      <div class="feld">
+        <label for="bestehendeKredite">Restschuld bestehender Kredite (CHF)</label>
+        <input type="number" id="bestehendeKredite" min="0" step="100" value="0" required>
+      </div>
+      <div class="feld">
+        <label for="kreditbetrag">Gewünschter Kreditbetrag (CHF)</label>
+        <input type="number" id="kreditbetrag" min="1" step="100" value="150000" required>
+      </div>
+      <div class="feld">
+        <label for="laufzeitMonate">Laufzeit (Monate)</label>
+        <input type="number" id="laufzeitMonate" min="1" step="1" value="120" required>
+      </div>
+      <div class="feld">
+        <label for="zinssatz">Zinssatz (% pro Jahr)</label>
+        <input type="number" id="zinssatz" min="0" step="0.05" value="3" required>
+      </div>
+      <div class="feld" id="feld-alter">
+        <label for="alter">Alter (Jahre)</label>
+        <input type="number" id="alter" min="18" max="100" step="1" value="40">
+      </div>
+
+      <div class="aktionen">
+        <button type="submit">Kredit prüfen</button>
+        <button type="button" id="btn-zurueck-typ">Zurück</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Schritt 3: Resultat -->
+  <section id="view-resultat" class="view versteckt">
+    <h2>Resultat</h2>
+    <div id="empfehlung" class="empfehlung"></div>
+    <p id="rate-text"></p>
+
+    <h3>Begründung</h3>
+    <ul id="begruendung"></ul>
+
+    <h3>Kennzahlen</h3>
+    <table id="kennzahlen-tabelle">
+      <thead><tr><th>Kennzahl</th><th>Wert</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h3>Berechnungsschritte</h3>
+    <ol id="schritte"></ol>
+
+    <div class="aktionen">
+      <button type="button" id="btn-zurueck-antrag">Angaben ändern</button>
+      <button type="button" id="btn-neu">Neue Prüfung</button>
+    </div>
+  </section>
+
+  <!-- Regelwerk -->
+  <section id="view-regeln" class="view versteckt">
+    <h2>Regelwerk der Bank</h2>
+    <p class="hinweis">Die Bank definiert hier die Grenzwerte, anhand derer die Kreditwürdigkeit beurteilt wird.</p>
+    <table id="regel-tabelle">
+      <thead>
+        <tr>
+          <th>Bezeichnung</th><th>Kennzahl</th><th>Operator</th><th>Grenzwert</th><th>Gilt für</th><th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="aktionen">
+      <button type="button" id="btn-regel-neu">Regel hinzufügen</button>
+      <button type="button" id="btn-regel-speichern">Speichern</button>
+      <button type="button" id="btn-regel-standard">Standardregeln laden</button>
+    </div>
+    <p id="regel-status" class="status"></p>
+  </section>
+</main>
+
+<script src="js/modelle.js"></script>
+<script src="js/rate.js"></script>
+<script src="js/regelwerk.js"></script>
+<script src="js/pruefung.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

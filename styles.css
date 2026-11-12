@@ -1,0 +1,143 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  color: #222;
+  background: #f5f5f5;
+}
+
+header {
+  background: #2c3e50;
+  color: #fff;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+header h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+main {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
+h2 {
+  font-size: 18px;
+  margin-top: 0;
+}
+
+h3 {
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+button {
+  font-size: 14px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+button.gross {
+  padding: 20px;
+  font-size: 15px;
+}
+
+.auswahl {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.feld {
+  margin-bottom: 10px;
+}
+
+.feld label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.feld input {
+  width: 220px;
+  padding: 5px;
+}
+
+.aktionen {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 5px 8px;
+  text-align: left;
+}
+
+th {
+  background: #eee;
+}
+
+#regel-tabelle input[type="text"] {
+  width: 180px;
+}
+
+#regel-tabelle input[type="number"] {
+  width: 80px;
+}
+
+.empfehlung {
+  font-size: 17px;
+  font-weight: bold;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.empfehlung.ja {
+  background: #e4f4e4;
+  border: 1px solid #5a5;
+}
+
+.empfehlung.nein {
+  background: #f9e4e4;
+  border: 1px solid #a55;
+}
+
+li.ja {
+  color: #275;
+}
+
+li.nein {
+  color: #a33;
+}
+
+#schritte li,
+#begruendung li {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.hinweis, .status {
+  font-size: 13px;
+  color: #555;
+}
+
+.versteckt {
+  display: none;
+}
