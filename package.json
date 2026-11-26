@@ -1,0 +1,19 @@
+{
+  "name": "kreditpruefung",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Vereinfachte Kreditpruefung - Applikation und automatisierte Tests",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:alle": "vitest run && playwright test",
+    "start": "node tests/e2e/server.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "jsdom": "^31.0.1",
+    "vitest": "^5.1.2"
+  }
+}
