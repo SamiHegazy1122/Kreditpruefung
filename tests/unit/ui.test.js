@@ -198,7 +198,8 @@ describe('zeigeResultat - Begründung', () => {
 
     const eintraege = feld('begruendung').querySelectorAll('li');
     expect(eintraege).toHaveLength(ergebnis.begruendung.length);
-    expect([...eintraege].map(li => li.textContent)).toEqual(ergebnis.begruendung);
+    expect([...eintraege].map(li => li.textContent))
+      .toEqual(ergebnis.begruendung.map(b => b.text));
   });
 
   it('markiert erfüllte Begründungen grün und verletzte rot', () => {
@@ -216,9 +217,9 @@ describe('zeigeResultat - Begründung', () => {
     expect(feld('begruendung').querySelectorAll('li')).toHaveLength(5);
   });
 
-  it('markiert eine Regel fälschlich als verletzt, wenn ihre Bezeichnung "nicht erfüllt" enthält', () => {
-    /* Dokumentiertes Ist-Verhalten: ui.js klassifiziert über Textsuche
-       (js/ui.js:62) statt über ein Flag im Prüfergebnis. */
+  it('markiert eine erfüllte Regel auch dann grün, wenn ihre Bezeichnung "nicht erfüllt" enthält', () => {
+    /* Regressionsschutz: frueher klassifizierte ui.js ueber eine Textsuche nach
+       "nicht erfüllt" und faerbte diese Zeile falsch rot. */
     const regel = new fenster.Regel(
       'Grenzwert nicht erfüllt?', 'tragbarkeitsquote', '<=', 0.35, 'beide'
     );
@@ -226,7 +227,22 @@ describe('zeigeResultat - Begründung', () => {
 
     expect(ergebnis.empfohlen).toBe(true);
     fenster.zeigeResultat(ergebnis);
-    expect(feld('begruendung').querySelector('li').className).toBe('nein');
+
+    const eintrag = feld('begruendung').querySelector('li');
+    expect(eintrag.className).toBe('ja');
+    expect(eintrag.textContent).toContain('Grenzwert nicht erfüllt?');
+  });
+
+  it('klassifiziert über das erfuellt-Flag und nicht über den Text', () => {
+    const ergebnis = new fenster.Pruefergebnis(true, {}, [
+      new fenster.Begruendung('Sieht aus wie nicht erfüllt', true),
+      new fenster.Begruendung('Sieht aus wie erfüllt', false)
+    ], [], 100, []);
+
+    fenster.zeigeResultat(ergebnis);
+
+    const klassen = [...feld('begruendung').querySelectorAll('li')].map(li => li.className);
+    expect(klassen).toEqual(['ja', 'nein']);
   });
 });
 

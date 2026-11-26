@@ -40,7 +40,7 @@ export const REFERENZ_ANTRAG = {
    Namen werden übersprungen, damit der Harness neue oder entfernte Module
    überlebt. */
 const GESPIEGELTE_NAMEN = [
-  'Kreditantrag', 'Pruefergebnis', 'Regel', 'Tilgungszeile',   // modelle.js
+  'Kreditantrag', 'Pruefergebnis', 'Regel', 'Tilgungszeile', 'Begruendung',  // modelle.js
   'KENNZAHLEN', 'SATZ_BESTEHENDE_KREDITE',                     // pruefung.js
   'REGEL_SCHLUESSEL',                                          // regelwerk.js
   'SVG_NS', 'DIAGRAMM_FARBEN', 'DIA_BREITE', 'DIA_HOEHE', 'DIA_RAND'  // diagramm.js

@@ -19,10 +19,17 @@ class Pruefergebnis {
   constructor(empfohlen, kennzahlen, begruendung, schritte, monatsrate, tilgungsplan) {
     this.empfohlen = empfohlen;
     this.kennzahlen = kennzahlen;
-    this.begruendung = begruendung;   // string[]
+    this.begruendung = begruendung;   // Begruendung[]
     this.schritte = schritte;         // string[]
     this.monatsrate = monatsrate;     // number | null
     this.tilgungsplan = tilgungsplan; // Tilgungszeile[]
+  }
+}
+
+class Begruendung {
+  constructor(text, erfuellt) {
+    this.text = text;           // Klartext fuer die Anzeige
+    this.erfuellt = erfuellt;   // true, wenn die Regel eingehalten ist
   }
 }
 

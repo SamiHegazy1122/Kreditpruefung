@@ -75,12 +75,15 @@ function pruefeRegel(regel, kennzahlen) {
   return false;
 }
 
+/* Liefert Klartext und Ergebnis als Begruendung. Das erfuellt-Flag wird
+   mitgegeben, damit die Anzeige nicht aus dem Text zurueckschliessen muss. */
 function begruende(regel, kennzahlen) {
   const wert = kennzahlen[regel.kennzahl];
   const erfuellt = pruefeRegel(regel, kennzahlen);
-  return regel.bezeichnung + ': ' + formatiereWert(regel.kennzahl, wert)
+  const text = regel.bezeichnung + ': ' + formatiereWert(regel.kennzahl, wert)
     + ' ' + regel.operator + ' ' + formatiereWert(regel.kennzahl, regel.grenzwert)
     + ' -> ' + (erfuellt ? 'erfüllt' : 'nicht erfüllt');
+  return new Begruendung(text, erfuellt);
 }
 
 /* Gilt die Regel fuer diesen Antrag? Neben giltFuer wird geprueft, ob die
@@ -108,8 +111,8 @@ function pruefeKredit(antrag, regeln) {
   /* Ohne pruefbares Kriterium gibt es keine Grundlage fuer eine Vergabe. */
   if (anwendbar.length === 0) {
     empfohlen = false;
-    begruendung.push('Keine Regel definiert, die für diesen Antragstyp gilt. '
-      + 'Ohne Kriterium kann keine Vergabe empfohlen werden.');
+    begruendung.push(new Begruendung('Keine Regel definiert, die für diesen Antragstyp gilt. '
+      + 'Ohne Kriterium kann keine Vergabe empfohlen werden.', false));
   }
 
   const schritte = [

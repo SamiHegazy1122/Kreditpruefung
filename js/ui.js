@@ -60,10 +60,10 @@ function zeigeResultat(ergebnis) {
 
   const liste = document.getElementById('begruendung');
   liste.innerHTML = '';
-  ergebnis.begruendung.forEach(text => {
+  ergebnis.begruendung.forEach(begruendung => {
     const li = document.createElement('li');
-    li.textContent = text;
-    li.className = text.indexOf('nicht erfüllt') >= 0 ? 'nein' : 'ja';
+    li.textContent = begruendung.text;
+    li.className = begruendung.erfuellt ? 'ja' : 'nein';
     liste.appendChild(li);
   });
 

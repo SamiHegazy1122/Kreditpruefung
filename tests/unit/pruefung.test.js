@@ -126,22 +126,40 @@ describe('pruefeRegel', () => {
 describe('begruende', () => {
   it('nennt Bezeichnung, Istwert, Operator, Grenzwert und das Resultat', () => {
     const kennzahlen = { tragbarkeitsquote: 0.3048411 };
-    const text = fenster.begruende(
+    const begruendung = fenster.begruende(
       regel('tragbarkeitsquote', '<=', 0.35, 'beide', 'Tragbarkeit: Belastungsquote'), kennzahlen
     );
 
-    expect(text).toBe('Tragbarkeit: Belastungsquote: 30.5 % <= 35.0 % -> erfüllt');
+    expect(begruendung).toBeInstanceOf(fenster.Begruendung);
+    expect(begruendung.text).toBe('Tragbarkeit: Belastungsquote: 30.5 % <= 35.0 % -> erfüllt');
+    expect(begruendung.erfuellt).toBe(true);
   });
 
-  it('kennzeichnet eine verletzte Regel mit "nicht erfüllt"', () => {
-    const text = fenster.begruende(regel('eigenmittelquote', '>=', 0.5), { eigenmittelquote: 0.1 });
-    expect(text).toContain('nicht erfüllt');
+  it('kennzeichnet eine verletzte Regel über das erfuellt-Flag', () => {
+    const begruendung = fenster.begruende(regel('eigenmittelquote', '>=', 0.5), { eigenmittelquote: 0.1 });
+
+    expect(begruendung.erfuellt).toBe(false);
+    expect(begruendung.text).toContain('nicht erfüllt');
+  });
+
+  it('meldet erfuellt = true, auch wenn die Bezeichnung "nicht erfüllt" enthält', () => {
+    /* Die Anzeige darf nicht aus dem Text zurueckschliessen muessen. */
+    const begruendung = fenster.begruende(
+      regel('tragbarkeitsquote', '<=', 0.35, 'beide', 'Grenzwert nicht erfüllt?'),
+      { tragbarkeitsquote: 0.3 }
+    );
+
+    expect(begruendung.erfuellt).toBe(true);
+    expect(begruendung.text).toContain('nicht erfüllt?');
   });
 
   it('stellt einen fehlenden Istwert als "-" dar', () => {
-    const text = fenster.begruende(regel('alterBeiKreditende', '<=', 70), { alterBeiKreditende: null });
-    expect(text).toContain('-');
-    expect(text).toContain('nicht erfüllt');
+    const begruendung = fenster.begruende(
+      regel('alterBeiKreditende', '<=', 70), { alterBeiKreditende: null }
+    );
+
+    expect(begruendung.text).toContain('-');
+    expect(begruendung.erfuellt).toBe(false);
   });
 });
 
@@ -153,7 +171,7 @@ describe('pruefeKredit - Empfehlung', () => {
     expect(ergebnis.empfohlen).toBe(true);
     expect(ergebnis.monatsrate).toBeCloseTo(1448.4112, 4);
     expect(ergebnis.begruendung).toHaveLength(5);
-    expect(ergebnis.begruendung.every(text => !text.includes('nicht erfüllt'))).toBe(true);
+    expect(ergebnis.begruendung.every(b => b.erfuellt)).toBe(true);
   });
 
   it('lehnt einen zu hohen Kreditbetrag ab und weist keine Monatsrate aus', () => {
@@ -163,7 +181,7 @@ describe('pruefeKredit - Empfehlung', () => {
 
     expect(ergebnis.empfohlen).toBe(false);
     expect(ergebnis.monatsrate).toBeNull();
-    expect(ergebnis.begruendung.filter(text => text.includes('nicht erfüllt'))).toHaveLength(4);
+    expect(ergebnis.begruendung.filter(b => !b.erfuellt)).toHaveLength(4);
     /* Die Kennzahlen bleiben trotz Ablehnung erhalten und nachvollziehbar. */
     expect(ergebnis.kennzahlen.monatsrate).toBeGreaterThan(0);
   });
@@ -175,8 +193,8 @@ describe('pruefeKredit - Empfehlung', () => {
     ]);
 
     expect(ergebnis.empfohlen).toBe(false);
-    expect(ergebnis.begruendung[0]).toContain('-> erfüllt');
-    expect(ergebnis.begruendung[1]).toContain('nicht erfüllt');
+    expect(ergebnis.begruendung[0].erfuellt).toBe(true);
+    expect(ergebnis.begruendung[1].erfuellt).toBe(false);
   });
 
   it('empfiehlt genau dann, wenn alle anwendbaren Regeln erfüllt sind', () => {
@@ -191,7 +209,7 @@ describe('pruefeKredit - Empfehlung', () => {
 describe('pruefeKredit - Regelauswahl nach Antragstyp', () => {
   it('wendet bei Privatpersonen die Regeln "beide" und "privat" an', () => {
     const ergebnis = fenster.pruefeKredit(erstelleAntrag(fenster), fenster.standardRegeln());
-    const texte = ergebnis.begruendung.join('\n');
+    const texte = ergebnis.begruendung.map(b => b.text).join('\n');
 
     expect(ergebnis.begruendung).toHaveLength(5);
     expect(texte).toContain('Freies Einkommen');
@@ -201,7 +219,7 @@ describe('pruefeKredit - Regelauswahl nach Antragstyp', () => {
 
   it('wendet bei Unternehmen die Regeln "beide" und "unternehmen" an', () => {
     const ergebnis = fenster.pruefeKredit(unternehmensAntrag(), fenster.standardRegeln());
-    const texte = ergebnis.begruendung.join('\n');
+    const texte = ergebnis.begruendung.map(b => b.text).join('\n');
 
     expect(ergebnis.begruendung).toHaveLength(4);
     expect(texte).toContain('Mindestgewinn');
@@ -213,8 +231,8 @@ describe('pruefeKredit - Regelauswahl nach Antragstyp', () => {
     const ergebnis = fenster.pruefeKredit(unternehmensAntrag({ einkommen: 40000 }), fenster.standardRegeln());
 
     expect(ergebnis.empfohlen).toBe(false);
-    expect(ergebnis.begruendung.filter(text => text.includes('nicht erfüllt'))).toHaveLength(1);
-    expect(ergebnis.begruendung.at(-1)).toContain('Mindestgewinn');
+    expect(ergebnis.begruendung.filter(b => !b.erfuellt)).toHaveLength(1);
+    expect(ergebnis.begruendung.at(-1).text).toContain('Mindestgewinn');
   });
 
   it('empfiehlt einen Unternehmensantrag über dem Mindestgewinn', () => {
@@ -228,7 +246,7 @@ describe('pruefeKredit - Regelauswahl nach Antragstyp', () => {
     );
 
     expect(ergebnis.begruendung).toHaveLength(1);
-    expect(ergebnis.begruendung[0]).toContain('Keine Regel definiert');
+    expect(ergebnis.begruendung[0].text).toContain('Keine Regel definiert');
     /* Ohne pruefbares Kriterium gibt es keine Grundlage fuer eine Vergabe. */
     expect(ergebnis.empfohlen).toBe(false);
     expect(ergebnis.monatsrate).toBeNull();
@@ -239,7 +257,7 @@ describe('pruefeKredit - Regelauswahl nach Antragstyp', () => {
 
     expect(ergebnis.empfohlen).toBe(false);
     expect(ergebnis.begruendung).toHaveLength(1);
-    expect(ergebnis.begruendung[0]).toContain('keine Vergabe empfohlen werden');
+    expect(ergebnis.begruendung[0].text).toContain('keine Vergabe empfohlen werden');
   });
 
   it('überspringt Regeln, deren Kennzahl für diesen Antragstyp nicht existiert', () => {
@@ -252,7 +270,7 @@ describe('pruefeKredit - Regelauswahl nach Antragstyp', () => {
 
     expect(ergebnis.empfohlen).toBe(true);
     expect(ergebnis.begruendung).toHaveLength(1);
-    expect(ergebnis.begruendung[0]).toContain('tragbarkeitsquote');
+    expect(ergebnis.begruendung[0].text).toContain('tragbarkeitsquote');
   });
 
   it('wendet dieselbe Regel bei Privatpersonen weiterhin an', () => {
@@ -272,7 +290,7 @@ describe('pruefeKredit - Regelauswahl nach Antragstyp', () => {
     ]);
 
     expect(ergebnis.begruendung).toHaveLength(1);
-    expect(ergebnis.begruendung[0]).toContain('nicht erfüllt');
+    expect(ergebnis.begruendung[0].erfuellt).toBe(false);
     expect(ergebnis.empfohlen).toBe(false);
   });
 

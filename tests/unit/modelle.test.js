@@ -39,13 +39,14 @@ describe('Kreditantrag', () => {
 
 describe('Pruefergebnis', () => {
   it('übernimmt alle fünf Konstruktorargumente', () => {
+    const begruendung = [new fenster.Begruendung('Regel A -> erfüllt', true)];
     const ergebnis = new fenster.Pruefergebnis(
-      true, { monatsrate: 100 }, ['Regel A: erfüllt'], ['Schritt 1'], 100
+      true, { monatsrate: 100 }, begruendung, ['Schritt 1'], 100
     );
 
     expect(ergebnis.empfohlen).toBe(true);
     expect(ergebnis.kennzahlen).toEqual({ monatsrate: 100 });
-    expect(ergebnis.begruendung).toEqual(['Regel A: erfüllt']);
+    expect(ergebnis.begruendung).toEqual(begruendung);
     expect(ergebnis.schritte).toEqual(['Schritt 1']);
     expect(ergebnis.monatsrate).toBe(100);
   });
@@ -54,6 +55,19 @@ describe('Pruefergebnis', () => {
     const ergebnis = new fenster.Pruefergebnis(false, {}, [], [], null);
     expect(ergebnis.empfohlen).toBe(false);
     expect(ergebnis.monatsrate).toBeNull();
+  });
+});
+
+describe('Begruendung', () => {
+  it('übernimmt Text und erfuellt-Flag', () => {
+    const begruendung = new fenster.Begruendung('Tragbarkeit: 30.5 % <= 35.0 % -> erfüllt', true);
+
+    expect(begruendung.text).toBe('Tragbarkeit: 30.5 % <= 35.0 % -> erfüllt');
+    expect(begruendung.erfuellt).toBe(true);
+  });
+
+  it('besitzt genau die Felder text und erfuellt', () => {
+    expect(Object.keys(new fenster.Begruendung('x', false))).toEqual(['text', 'erfuellt']);
   });
 });
 
