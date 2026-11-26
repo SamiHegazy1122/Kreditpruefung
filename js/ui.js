@@ -11,8 +11,8 @@ function zeigeView(id) {
 }
 
 /* Liest ein Zahlenfeld. Leere, unlesbare und unendliche Eingaben gelten als 0.
-   Bewusst isFinite statt "|| 0": damit bleibt eine eingegebene 0 eine 0 und ein
-   Wert wie 1e999 wird nicht als Infinity in die Berechnung weitergegeben. */
+   isFinite statt "|| 0", damit die Absicht explizit ist; ein Zahlenfeld
+   bereinigt nicht darstellbare Werte allerdings schon selbst zu "". */
 function zahl(id) {
   const wert = parseFloat(document.getElementById(id).value);
   return isFinite(wert) ? wert : 0;

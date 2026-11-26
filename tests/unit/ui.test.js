@@ -135,8 +135,12 @@ describe('leseAntrag', () => {
     expect(antrag.vermoegen).toBe(0);
   });
 
-  it('gibt keine unendlichen Werte an die Berechnung weiter', () => {
+  it('wertet einen vom Browser verworfenen Betrag als 0', () => {
+    /* Ein Zahlenfeld bereinigt nicht darstellbare Werte selbst zu "" (HTML-
+       Wertebereinigung), zahl() sieht also nie Infinity. Dieser Test haelt die
+       Kette fest: ungueltige Eingabe -> leeres Feld -> 0. */
     feld('kreditbetrag').value = '1e999';
+    expect(feld('kreditbetrag').value).toBe('');
     expect(fenster.leseAntrag('privat').kreditbetrag).toBe(0);
   });
 

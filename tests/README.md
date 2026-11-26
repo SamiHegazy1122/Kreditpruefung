@@ -85,6 +85,7 @@ damit mit leerem `localStorage`.
 | `«class» Kreditantrag` | `unit/modelle.test.js` | 02, 03 |
 | `«class» Pruefergebnis` | `unit/modelle.test.js` | 02 |
 | `«class» Regel` | `unit/modelle.test.js`, `unit/regelwerk.test.js` | 04 |
+| `«class» Begruendung` | `unit/modelle.test.js`, `unit/pruefung.test.js` | 02, 03, 04 |
 | `localStorage` (Notiz) | `unit/regelwerk.test.js` | 04 (Persistenz über Reload) |
 | `tilgungsplan.js` | `unit/tilgungsplan.test.js` | 06 |
 | `diagramm.js` | `unit/diagramm.test.js` | 06 |
@@ -105,39 +106,48 @@ Das Diagramm führt bei `pruefung.js` die Hilfsfunktionen `formatiereWert` und
 nicht `netteSchrittweite`, `stapleReihen`, `svgElement` und `svgText`. Die Tests
 decken sie trotzdem ab.
 
-## Beobachtungen aus dem Code
+## Behobene Fehler
 
-Die Tests schreiben folgende Punkte als **Ist-Verhalten** fest. Falls einer davon
-fachlich unerwünscht ist, wäre das eine Folgeänderung am Produktionscode:
+Alle Punkte, die die Tests zunächst als Ist-Verhalten festgeschrieben hatten,
+sind inzwischen behoben. Die Tests sichern die Korrekturen ab:
 
-1. **Leeres Regelwerk ⇒ Kredit empfohlen** (`js/pruefung.js`): Gibt es keine
-   anwendbare Regel, bleibt `empfohlen = true` – es wird eine Vergabe empfohlen,
-   ohne dass ein Kriterium geprüft wurde. Fachlich wäre „keine Empfehlung
-   möglich" plausibler.
-   Tests: `unit/pruefung.test.js`, `e2e/04-regelwerk.spec.js`.
-2. **Klassifizierung über Textsuche** (`js/ui.js`): Grün/Rot entscheidet
-   `text.indexOf('nicht erfüllt')`. Eine Regel-`bezeichnung`, die „nicht erfüllt"
-   enthält, färbt die Zeile falsch rot. Robuster wäre ein `erfuellt`-Flag im
-   Prüfergebnis. Test: `unit/ui.test.js`.
-3. **`zahl()` verwechselt 0 und ungültig** (`js/ui.js`): `parseFloat(…) || 0`
-   macht aus leeren oder unlesbaren Feldern eine 0 – bei `einkommen` führt das zu
-   `Infinity`-Kennzahlen. Test: `unit/ui.test.js`.
-4. **`alterBeiKreditende` ist `null` bei Unternehmen**: Stellt die Bank diese
-   Regel auf `giltFuer = 'beide'`, scheitert sie für Unternehmen immer
-   (`pruefeRegel` → `false`), ein Unternehmenskredit wird also nie mehr
-   empfohlen. Die UI erlaubt diese Kombination. Test: `unit/pruefung.test.js`.
-5. **Formatierung ist ICU-abhängig** (`js/pruefung.js`): `toLocaleString('de-CH')`
-   liefert je nach Node-/Browser-Version ein anderes Tausendertrennzeichen.
-   CHF-Beträge werden darum toleranz- statt exakt-verglichen
-   (`nurZahlentext` in `tests/hilfen/app.js`).
-
-### Durch die Tests gefundener und behobener Fehler
-
-`#kreditbetrag` hatte `min="1"` zusammen mit `step="100"`. Damit ist die
-Schrittbasis 1, gültig sind also nur 1, 101, 201 … – der Vorgabewert 150000
-verstiess gegen die HTML5-Validierung und ein Klick auf „Kredit prüfen" blieb im
-Browser **wirkungslos**. Behoben mit `min="100"`.
-
-Bemerkenswert: alle Unit-Tests waren grün, weil jsdom die
-Constraint-Validierung beim Absenden nicht erzwingt. Nur die Browser-Tests haben
-den Fehler gefunden – `e2e/05-formular-validierung.spec.js` sichert ihn ab.
+1. **Kreditbetrag-Feld blockierte das Absenden** (`index.html`): `min="1"`
+   zusammen mit `step="100"` machte nur 1, 101, 201 … gültig – der Vorgabewert
+   150000 verstiess gegen die HTML5-Validierung und ein Klick auf
+   „Kredit prüfen" blieb im Browser **wirkungslos**. Behoben mit `min="100"`.
+   Bemerkenswert: alle Unit-Tests waren grün, weil jsdom die
+   Constraint-Validierung beim Absenden nicht erzwingt. Nur die Browser-Tests
+   haben den Fehler gefunden.
+   Absicherung: `e2e/05-formular-validierung.spec.js`.
+2. **Leeres Regelwerk empfahl die Vergabe** (`js/pruefung.js`): Ohne anwendbare
+   Regel blieb `empfohlen = true` – die App empfahl eine Vergabe, ohne ein
+   einziges Kriterium geprüft zu haben. Jetzt wird abgelehnt und begründet,
+   warum keine Beurteilung möglich ist.
+   Absicherung: `unit/pruefung.test.js`, `e2e/04-regelwerk.spec.js`.
+3. **Altersregel blockierte jeden Unternehmenskredit** (`js/pruefung.js`):
+   `alterBeiKreditende` ist bei Unternehmen `null`. Auf `giltFuer = 'beide'`
+   gestellt, galt die Regel als verletzt statt als nicht anwendbar.
+   `istAnwendbar()` überspringt eine Regel nun, wenn ihre Kennzahl für diesen
+   Antragstyp nicht existiert. Bewusst anders behandelt: eine **unbekannte**
+   Kennzahl (Tippfehler im Regelwerk) bleibt anwendbar und scheitert, damit sie
+   nicht unbemerkt wegfällt; `Infinity` bei Einkommen 0 bleibt eine Verletzung.
+   Absicherung: `unit/pruefung.test.js`, `e2e/04-regelwerk.spec.js`.
+4. **Klassifizierung über Textsuche** (`js/ui.js`): Grün/Rot entschied
+   `text.indexOf('nicht erfüllt')`. Eine Regelbezeichnung, die diese
+   Zeichenfolge enthielt, färbte die Zeile falsch rot. `begruende()` liefert
+   jetzt eine `Begruendung` mit `text` und `erfuellt`; die Anzeige liest das
+   Flag. Absicherung: `unit/ui.test.js`, `unit/pruefung.test.js`.
+5. **`zahl()` nur abgehärtet, kein erreichbarer Fehler** (`js/ui.js`):
+   `parseFloat(…) || 0` wurde durch eine `isFinite`-Prüfung ersetzt, damit die
+   Absicht explizit ist. Die Nachprüfung zeigte allerdings, dass der
+   `Infinity`-Pfad über `<input type="number">` **nicht erreichbar** ist:
+   Browser und jsdom bereinigen einen nicht darstellbaren Wert wie `1e999`
+   selbst zu `""`. Beide Varianten verhalten sich für alle erreichbaren
+   Eingaben identisch – es gibt daher bewusst **keinen** Regressionstest für
+   diese Änderung. `unit/ui.test.js` hält stattdessen die tatsächliche Kette
+   fest (ungültige Eingabe → leeres Feld → 0).
+6. **Formatierung war ICU-abhängig** (`js/pruefung.js`):
+   `toLocaleString('de-CH')` lieferte je nach Node-/Browser-Version ein anderes
+   Tausendertrennzeichen. `formatiereBetrag()` gruppiert jetzt selbst mit einem
+   Apostroph, wodurch die CHF-Assertions exakt statt tolerant vergleichen.
+   Absicherung: `unit/pruefung.test.js`.
