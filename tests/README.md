@@ -34,6 +34,8 @@ tests/
     rate.test.js                   monatsrate (Annuität)
     regelwerk.test.js              ladeRegeln / speichereRegeln / standardRegeln + localStorage
     pruefung.test.js               pruefeKredit / berechneKennzahlen / pruefeRegel / begruende
+    tilgungsplan.test.js           tilgungsplan / gesamtzinsen + Tilgungszeile
+    diagramm.test.js               zeichneDiagramm / zeigeDiagramm / netteSchrittweite
     ui.test.js                     Darstellung und Benutzerinteraktion
   e2e/
     server.mjs                     minimaler statischer Testserver (keine Extra-Dependency)
@@ -43,6 +45,7 @@ tests/
     03-pruefung-unternehmen.spec.js
     04-regelwerk.spec.js
     05-formular-validierung.spec.js
+    06-verlauf.spec.js
 ```
 
 ### Wie die Unit-Tests an den Code kommen
@@ -83,21 +86,24 @@ damit mit leerem `localStorage`.
 | `«class» Pruefergebnis` | `unit/modelle.test.js` | 02 |
 | `«class» Regel` | `unit/modelle.test.js`, `unit/regelwerk.test.js` | 04 |
 | `localStorage` (Notiz) | `unit/regelwerk.test.js` | 04 (Persistenz über Reload) |
+| `tilgungsplan.js` | `unit/tilgungsplan.test.js` | 06 |
+| `diagramm.js` | `unit/diagramm.test.js` | 06 |
+| `«class» Tilgungszeile` | `unit/tilgungsplan.test.js` | 06 |
+| `ui.js → zeigeVerlauf()` | `unit/ui.test.js` | 06 |
 
 Die Diagramm-Kanten sind ebenfalls abgedeckt: `ui.js → pruefung.js` (Formular
 absenden), `ui.js → regelwerk.js` (Speichern/Standardregeln), `pruefung.js →
 rate.js` (Monatsrate), `pruefung.js → Regel` („wendet an", Regelauswahl nach
-Antragstyp), `regelwerk.js → localStorage` („liest/schreibt").
+Antragstyp), `regelwerk.js → localStorage` („liest/schreibt"),
+`tilgungsplan.js → rate.js` („verwendet", konstante Annuität),
+`tilgungsplan.js → Tilgungszeile` („erzeugt"), `ui.js → diagramm.js`
+(„zeichnet mit") und `Pruefergebnis.tilgungsplan` („verwendet").
 
 Das Diagramm führt bei `pruefung.js` die Hilfsfunktionen `formatiereWert` und
-`bezeichnungKennzahl` nicht auf und bei `ui.js` nicht `zeigeView`, `zahl`,
-`zeigeAntragsformular` und `setzeStatus`. Die Tests decken sie trotzdem ab.
-
-**Noch nicht abgedeckt:** die Erweiterung `js/tilgungsplan.js`, `js/diagramm.js`
-und die Klasse `Tilgungszeile` sind weder im Klassendiagramm beschrieben noch
-getestet. Die bestehenden Tests prüfen aber, dass die Erweiterung die
-Kreditprüfung nicht verändert (Kennzahlen, Empfehlung, Begründung) und der neue
-Berechnungsschritt „Gesamte Zinszahlungen" an der richtigen Stelle erscheint.
+`bezeichnungKennzahl` nicht auf, bei `ui.js` nicht `zeigeView`, `zahl`,
+`zeigeAntragsformular`, `setzeStatus` und `laufzeitSchritt` und bei `diagramm.js`
+nicht `netteSchrittweite`, `stapleReihen`, `svgElement` und `svgText`. Die Tests
+decken sie trotzdem ab.
 
 ## Beobachtungen aus dem Code
 

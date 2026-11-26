@@ -461,3 +461,106 @@ describe('Navigation zwischen den Ansichten', () => {
     expect(sichtbareViews()).toEqual(['view-typ']);
   });
 });
+
+describe('zeigeVerlauf', () => {
+  const diagramme = () => [
+    feld('diagramm-restschuld').querySelector('svg'),
+    feld('diagramm-zinsen').querySelector('svg')
+  ];
+
+  it('zeichnet beide Diagramme zum Tilgungsplan', () => {
+    fenster.zeigeVerlauf(privatErgebnis());
+
+    diagramme().forEach(svg => expect(svg).not.toBeNull());
+    expect(feld('diagramm-restschuld').querySelector('title').textContent)
+      .toContain('Restschuld');
+    expect(feld('diagramm-zinsen').querySelector('title').textContent)
+      .toContain('Zinsanteil');
+  });
+
+  it('nennt im Hinweis die gesamten Zinszahlungen', () => {
+    const ergebnis = privatErgebnis();
+    fenster.zeigeVerlauf(ergebnis);
+
+    const erwartet = fenster.formatiereWert(
+      'kreditbetrag', fenster.gesamtzinsen(ergebnis.tilgungsplan)
+    );
+    expect(feld('verlauf-hinweis').textContent)
+      .toBe('Gesamte Zinszahlungen über die Laufzeit: ' + erwartet);
+  });
+
+  it('kennzeichnet den Verlauf als hypothetisch, wenn der Kredit nicht empfohlen wird', () => {
+    fenster.zeigeVerlauf(privatErgebnis({ kreditbetrag: 900000 }));
+
+    expect(feld('verlauf-hinweis').textContent).toContain('hypothetischer Verlauf');
+    diagramme().forEach(svg => expect(svg).not.toBeNull());
+  });
+
+  it('meldet einen fehlenden Verlauf und leert die Diagramme', () => {
+    /* Ohne Kreditbetrag entsteht kein Tilgungsplan. */
+    fenster.zeigeVerlauf(privatErgebnis());
+    fenster.zeigeVerlauf(privatErgebnis({ kreditbetrag: 0 }));
+
+    expect(feld('verlauf-hinweis').textContent).toContain('kein Verlauf');
+    diagramme().forEach(svg => expect(svg).toBeNull());
+  });
+
+  it('verträgt ein Ergebnis ohne Tilgungsplan', () => {
+    const ohnePlan = new fenster.Pruefergebnis(true, {}, [], [], 100, undefined);
+    expect(() => fenster.zeigeVerlauf(ohnePlan)).not.toThrow();
+    expect(feld('verlauf-hinweis').textContent).toContain('kein Verlauf');
+  });
+
+  it('beschriftet die x-Achse ab zwei Jahren Laufzeit in Jahren', () => {
+    fenster.zeigeVerlauf(privatErgebnis({ laufzeitMonate: 120 }));
+    const texte = [...feld('diagramm-restschuld').querySelectorAll('text')]
+      .map(element => element.textContent);
+    expect(texte).toContain('Jahre');
+    expect(texte).not.toContain('Monate');
+  });
+
+  it('beschriftet die x-Achse unter zwei Jahren Laufzeit in Monaten', () => {
+    fenster.zeigeVerlauf(privatErgebnis({ laufzeitMonate: 12, kreditbetrag: 10000 }));
+    const texte = [...feld('diagramm-restschuld').querySelectorAll('text')]
+      .map(element => element.textContent);
+    expect(texte).toContain('Monate');
+    expect(texte).not.toContain('Jahre');
+  });
+
+  it('ersetzt bei einer erneuten Prüfung die alten Diagramme', () => {
+    fenster.zeigeVerlauf(privatErgebnis());
+    fenster.zeigeVerlauf(privatErgebnis());
+
+    expect(feld('diagramm-restschuld').children).toHaveLength(1);
+    expect(feld('diagramm-zinsen').children).toHaveLength(1);
+  });
+
+  it('wird von zeigeResultat mitaufgerufen', () => {
+    fenster.zeigeResultat(privatErgebnis());
+
+    diagramme().forEach(svg => expect(svg).not.toBeNull());
+    expect(feld('verlauf-hinweis').textContent).toContain('Zinszahlungen');
+  });
+});
+
+describe('laufzeitSchritt', () => {
+  it('beschriftet kurze Laufzeiten in Monatsschritten', () => {
+    expect(fenster.laufzeitSchritt(6)).toBe(1);
+    expect(fenster.laufzeitSchritt(12)).toBe(2);
+    expect(fenster.laufzeitSchritt(18)).toBe(3);
+  });
+
+  it('beschriftet ab zwei Jahren in ganzen Jahren', () => {
+    expect(fenster.laufzeitSchritt(24) % 12).toBe(0);
+    expect(fenster.laufzeitSchritt(120) % 12).toBe(0);
+    expect(fenster.laufzeitSchritt(240) % 12).toBe(0);
+  });
+
+  it('hält die Anzahl der Beschriftungen in einem lesbaren Rahmen', () => {
+    [1, 6, 12, 24, 60, 120, 240, 480].forEach(monate => {
+      const schritt = fenster.laufzeitSchritt(monate);
+      expect(schritt, 'Laufzeit ' + monate).toBeGreaterThanOrEqual(1);
+      expect(monate / schritt, 'Laufzeit ' + monate).toBeLessThanOrEqual(12);
+    });
+  });
+});

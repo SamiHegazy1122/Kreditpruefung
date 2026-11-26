@@ -36,18 +36,30 @@ export const REFERENZ_ANTRAG = {
   alter: 40
 };
 
+/* Namen, die per Test-Skript auf window gespiegelt werden. Nicht vorhandene
+   Namen werden übersprungen, damit der Harness neue oder entfernte Module
+   überlebt. */
+const GESPIEGELTE_NAMEN = [
+  'Kreditantrag', 'Pruefergebnis', 'Regel', 'Tilgungszeile',   // modelle.js
+  'KENNZAHLEN', 'SATZ_BESTEHENDE_KREDITE',                     // pruefung.js
+  'REGEL_SCHLUESSEL',                                          // regelwerk.js
+  'SVG_NS', 'DIAGRAMM_FARBEN', 'DIA_BREITE', 'DIA_HOEHE', 'DIA_RAND'  // diagramm.js
+];
+
+/* Veränderliche Zustandsvariablen aus ui.js: als Getter/Setter, damit die Tests
+   den echten Zustand sehen und setzen können. */
+const GESPIEGELTE_ZUSTAENDE = ['regeln', 'aktuellerTyp'];
+
 const BRUECKE = [
   '<script>',
-  'Object.defineProperties(window, {',
-  '  Kreditantrag:            { value: Kreditantrag },',
-  '  Pruefergebnis:           { value: Pruefergebnis },',
-  '  Regel:                   { value: Regel },',
-  '  KENNZAHLEN:              { value: KENNZAHLEN },',
-  '  SATZ_BESTEHENDE_KREDITE: { value: SATZ_BESTEHENDE_KREDITE },',
-  '  REGEL_SCHLUESSEL:        { value: REGEL_SCHLUESSEL },',
-  '  regeln:        { get: () => regeln,        set: (wert) => { regeln = wert; } },',
-  '  aktuellerTyp:  { get: () => aktuellerTyp,  set: (wert) => { aktuellerTyp = wert; } }',
-  '});',
+  ...GESPIEGELTE_NAMEN.map(name =>
+    `if (typeof ${name} !== 'undefined') Object.defineProperty(window, '${name}', `
+    + `{ value: ${name}, configurable: true });`
+  ),
+  ...GESPIEGELTE_ZUSTAENDE.map(name =>
+    `if (typeof ${name} !== 'undefined') Object.defineProperty(window, '${name}', `
+    + `{ get: () => ${name}, set: (wert) => { ${name} = wert; }, configurable: true });`
+  ),
   '</script>'
 ].join('\n');
 
