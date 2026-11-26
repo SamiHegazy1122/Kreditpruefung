@@ -141,3 +141,19 @@ li.nein {
 .versteckt {
   display: none;
 }
+
+.diagramm {
+  margin-bottom: 14px;
+}
+
+.diagramm svg {
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  display: block;
+}
+
+.diagramm text {
+  font-family: Arial, Helvetica, sans-serif;
+  fill: #555;
+}
