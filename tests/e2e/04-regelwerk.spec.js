@@ -1,7 +1,9 @@
 /* E2E: Regelwerk der Bank - Bearbeiten, Persistenz im localStorage und Wirkung
    auf die Prüfung (Klassendiagramm: regelwerk.js -> localStorage, Regel). */
 import { test, expect } from '@playwright/test';
-import { oeffneApp, waehleTyp, pruefeKredit, gespeicherteRegeln } from './hilfen.js';
+import {
+  oeffneApp, waehleTyp, fuelleAntrag, pruefeKredit, gespeicherteRegeln, UNTERNEHMEN_ANTRAG
+} from './hilfen.js';
 
 const zeilen = (page) => page.locator('#regel-tabelle tbody tr');
 
@@ -110,14 +112,31 @@ test('wendet ein verschärftes Regelwerk auf die nächste Prüfung an', async ({
 });
 
 test('wendet ein gelockertes Regelwerk auf die nächste Prüfung an', async ({ page }) => {
-  /* Ohne Anpassung wird ein Kredit von 900000 CHF abgelehnt. */
+  /* Mit Grenzwert 20 % wird der Standardantrag (30.5 %) abgelehnt, mit 40 % nicht. */
+  await grenzwertFeld(page, 0).fill('0.2');
+  await grenzwertFeld(page, 0).blur();
+  await page.getByRole('button', { name: 'Speichern' }).click();
+  await expect(page.locator('#regel-status')).toHaveText('Regeln gespeichert.');
+
   await page.locator('#nav-pruefung').click();
   await waehleTyp(page, 'privat');
-  await page.locator('#kreditbetrag').fill('900000');
   await pruefeKredit(page);
   await expect(page.locator('#empfehlung')).toHaveText('Empfehlung: Kredit nicht vergeben');
 
   await page.locator('#nav-regeln').click();
+  await grenzwertFeld(page, 0).fill('0.4');
+  await grenzwertFeld(page, 0).blur();
+  await page.getByRole('button', { name: 'Speichern' }).click();
+  await expect(page.locator('#regel-status')).toHaveText('Regeln gespeichert.');
+
+  await page.locator('#nav-pruefung').click();
+  await waehleTyp(page, 'privat');
+  await pruefeKredit(page);
+
+  await expect(page.locator('#empfehlung')).toHaveText('Empfehlung: Kredit vergeben');
+});
+
+test('empfiehlt ohne jede Regel keine Vergabe', async ({ page }) => {
   for (let index = 0; index < 6; index++) {
     await zeilen(page).first().getByRole('button', { name: 'Löschen' }).click();
   }
@@ -125,13 +144,29 @@ test('wendet ein gelockertes Regelwerk auf die nächste Prüfung an', async ({ p
 
   await page.locator('#nav-pruefung').click();
   await waehleTyp(page, 'privat');
-  await page.locator('#kreditbetrag').fill('900000');
   await pruefeKredit(page);
 
-  /* Dokumentiertes Ist-Verhalten: ohne anwendbare Regel wird empfohlen. */
+  /* Ohne pruefbares Kriterium gibt es keine Grundlage fuer eine Vergabe. */
+  await expect(page.locator('#empfehlung')).toHaveText('Empfehlung: Kredit nicht vergeben');
+  await expect(page.locator('#rate-text')).toContainText('keine Monatsrate');
+  await expect(page.locator('#begruendung li')).toHaveCount(1);
+  await expect(page.locator('#begruendung li')).toContainText('Keine Regel definiert');
+});
+
+test('blockiert einen Unternehmenskredit nicht mehr durch eine Altersregel', async ({ page }) => {
+  /* alterBeiKreditende existiert bei Unternehmen nicht. Auf "beide" gestellt
+     galt die Regel frueher als verletzt und verhinderte jede Vergabe. */
+  await zeilen(page).nth(4).locator('select').nth(2).selectOption('beide');
+  await page.getByRole('button', { name: 'Speichern' }).click();
+  await expect(page.locator('#regel-status')).toHaveText('Regeln gespeichert.');
+
+  await page.locator('#nav-pruefung').click();
+  await waehleTyp(page, 'unternehmen');
+  await fuelleAntrag(page, { ...UNTERNEHMEN_ANTRAG, einkommen: 200000 });
+  await pruefeKredit(page);
+
   await expect(page.locator('#empfehlung')).toHaveText('Empfehlung: Kredit vergeben');
-  await expect(page.locator('#begruendung li'))
-    .toHaveText('Keine Regel definiert, die für diesen Antragstyp gilt.');
+  await expect(page.locator('#begruendung')).not.toContainText('Alter bei Kreditende');
 });
 
 test('stellt mit "Standardregeln laden" das Standardregelwerk wieder her', async ({ page }) => {

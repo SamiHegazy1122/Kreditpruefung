@@ -227,15 +227,64 @@ describe('pruefeKredit - Regelauswahl nach Antragstyp', () => {
       unternehmensAntrag(), [regel('freiesEinkommen', '>=', 500, 'privat')]
     );
 
-    expect(ergebnis.begruendung).toEqual(['Keine Regel definiert, die für diesen Antragstyp gilt.']);
-    /* Dokumentiertes Ist-Verhalten: ohne anwendbare Regel wird empfohlen. */
-    expect(ergebnis.empfohlen).toBe(true);
+    expect(ergebnis.begruendung).toHaveLength(1);
+    expect(ergebnis.begruendung[0]).toContain('Keine Regel definiert');
+    /* Ohne pruefbares Kriterium gibt es keine Grundlage fuer eine Vergabe. */
+    expect(ergebnis.empfohlen).toBe(false);
+    expect(ergebnis.monatsrate).toBeNull();
   });
 
-  it('empfiehlt bei komplett leerem Regelwerk (dokumentiertes Ist-Verhalten)', () => {
+  it('empfiehlt bei komplett leerem Regelwerk nicht', () => {
     const ergebnis = fenster.pruefeKredit(erstelleAntrag(fenster), []);
+
+    expect(ergebnis.empfohlen).toBe(false);
+    expect(ergebnis.begruendung).toHaveLength(1);
+    expect(ergebnis.begruendung[0]).toContain('keine Vergabe empfohlen werden');
+  });
+
+  it('überspringt Regeln, deren Kennzahl für diesen Antragstyp nicht existiert', () => {
+    /* alterBeiKreditende ist bei Unternehmen null. Mit giltFuer "beide" wurde die
+       Regel frueher als verletzt gewertet und blockierte jeden Unternehmenskredit. */
+    const ergebnis = fenster.pruefeKredit(unternehmensAntrag({ einkommen: 200000 }), [
+      regel('tragbarkeitsquote', '<=', 0.35),
+      regel('alterBeiKreditende', '<=', 70, 'beide')
+    ]);
+
     expect(ergebnis.empfohlen).toBe(true);
     expect(ergebnis.begruendung).toHaveLength(1);
+    expect(ergebnis.begruendung[0]).toContain('tragbarkeitsquote');
+  });
+
+  it('wendet dieselbe Regel bei Privatpersonen weiterhin an', () => {
+    const ergebnis = fenster.pruefeKredit(erstelleAntrag(fenster, { alter: 64 }), [
+      regel('alterBeiKreditende', '<=', 70, 'beide')
+    ]);
+
+    expect(ergebnis.begruendung).toHaveLength(1);
+    expect(ergebnis.empfohlen).toBe(false);
+  });
+
+  it('lässt eine Regel mit unbekannter Kennzahl scheitern statt sie zu übergehen', () => {
+    /* Ein Tippfehler im Regelwerk darf nicht dazu führen, dass die Regel
+       stillschweigend wegfällt und der Kredit dadurch empfohlen wird. */
+    const ergebnis = fenster.pruefeKredit(erstelleAntrag(fenster), [
+      regel('gibtsNicht', '<=', 1)
+    ]);
+
+    expect(ergebnis.begruendung).toHaveLength(1);
+    expect(ergebnis.begruendung[0]).toContain('nicht erfüllt');
+    expect(ergebnis.empfohlen).toBe(false);
+  });
+
+  it('lehnt bei Einkommen 0 wegen der nicht berechenbaren Quoten ab', () => {
+    /* Infinity bleibt eine Regelverletzung und wird nicht als "nicht
+       anwendbar" uebergangen. */
+    const ergebnis = fenster.pruefeKredit(
+      erstelleAntrag(fenster, { einkommen: 0 }), [regel('tragbarkeitsquote', '<=', 0.35)]
+    );
+
+    expect(ergebnis.begruendung).toHaveLength(1);
+    expect(ergebnis.empfohlen).toBe(false);
   });
 });
 

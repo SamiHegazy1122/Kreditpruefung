@@ -83,10 +83,21 @@ function begruende(regel, kennzahlen) {
     + ' -> ' + (erfuellt ? 'erfüllt' : 'nicht erfüllt');
 }
 
+/* Gilt die Regel fuer diesen Antrag? Neben giltFuer wird geprueft, ob die
+   Kennzahl fuer diesen Antragstyp ueberhaupt existiert: alterBeiKreditende ist
+   bei Unternehmen null und eine solche Regel ist nicht verletzt, sondern
+   nicht anwendbar. Eine unbekannte Kennzahl (Konfigurationsfehler) bleibt
+   dagegen anwendbar und scheitert, damit sie nicht unbemerkt uebergangen wird. */
+function istAnwendbar(regel, antrag, kennzahlen) {
+  if (regel.giltFuer !== 'beide' && regel.giltFuer !== antrag.typ) return false;
+  if (!(regel.kennzahl in kennzahlen)) return true;
+  return kennzahlen[regel.kennzahl] !== null && kennzahlen[regel.kennzahl] !== undefined;
+}
+
 function pruefeKredit(antrag, regeln) {
   const kennzahlen = berechneKennzahlen(antrag);
   const plan = tilgungsplan(antrag.kreditbetrag, antrag.zinssatz, antrag.laufzeitMonate);
-  const anwendbar = regeln.filter(r => r.giltFuer === 'beide' || r.giltFuer === antrag.typ);
+  const anwendbar = regeln.filter(regel => istAnwendbar(regel, antrag, kennzahlen));
 
   const begruendung = [];
   let empfohlen = true;
@@ -94,7 +105,12 @@ function pruefeKredit(antrag, regeln) {
     if (!pruefeRegel(regel, kennzahlen)) empfohlen = false;
     begruendung.push(begruende(regel, kennzahlen));
   });
-  if (anwendbar.length === 0) begruendung.push('Keine Regel definiert, die für diesen Antragstyp gilt.');
+  /* Ohne pruefbares Kriterium gibt es keine Grundlage fuer eine Vergabe. */
+  if (anwendbar.length === 0) {
+    empfohlen = false;
+    begruendung.push('Keine Regel definiert, die für diesen Antragstyp gilt. '
+      + 'Ohne Kriterium kann keine Vergabe empfohlen werden.');
+  }
 
   const schritte = [
     'Monatszinssatz = ' + antrag.zinssatz + ' % / 12 = '
