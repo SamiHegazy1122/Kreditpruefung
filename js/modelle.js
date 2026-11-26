@@ -16,12 +16,23 @@ class Kreditantrag {
 }
 
 class Pruefergebnis {
-  constructor(empfohlen, kennzahlen, begruendung, schritte, monatsrate) {
+  constructor(empfohlen, kennzahlen, begruendung, schritte, monatsrate, tilgungsplan) {
     this.empfohlen = empfohlen;
     this.kennzahlen = kennzahlen;
     this.begruendung = begruendung;   // string[]
     this.schritte = schritte;         // string[]
     this.monatsrate = monatsrate;     // number | null
+    this.tilgungsplan = tilgungsplan; // Tilgungszeile[]
+  }
+}
+
+class Tilgungszeile {
+  constructor(monat, rate, zins, tilgung, restschuld) {
+    this.monat = monat;             // 1 .. laufzeitMonate
+    this.rate = rate;               // Annuitaet (konstant, letzte Rate ggf. kleiner)
+    this.zins = zins;               // Zinsanteil dieser Rate
+    this.tilgung = tilgung;         // Tilgungsanteil dieser Rate
+    this.restschuld = restschuld;   // Restschuld nach dieser Rate
   }
 }
 
