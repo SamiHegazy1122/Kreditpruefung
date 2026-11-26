@@ -18,13 +18,25 @@ const KENNZAHLEN = {
   kreditbetrag:       { label: 'Kreditbetrag', einheit: 'chf' }
 };
 
+/* Betrag in Schweizer Schreibweise: Tausender mit Apostroph, maximal zwei
+   Nachkommastellen, nachgestellte Nullen weggelassen (1234.5 -> 1'234.5).
+   Bewusst eigene Formatierung: toLocaleString('de-CH') liefert je nach
+   ICU-Version der Laufzeitumgebung ein anderes Tausendertrennzeichen. */
+function formatiereBetrag(wert) {
+  const gerundet = Math.round(wert * 100) / 100;
+  const stellen = Math.abs(gerundet).toFixed(2).split('.');
+  const ganzzahl = stellen[0].replace(/\B(?=(\d{3})+(?!\d))/g, '’');
+  const nachkomma = stellen[1] === '00' ? '' : '.' + stellen[1].replace(/0$/, '');
+  return (gerundet < 0 ? '-' : '') + ganzzahl + nachkomma;
+}
+
 function formatiereWert(kennzahl, wert) {
   if (wert === null || wert === undefined || !isFinite(wert)) return '-';
   const einheit = KENNZAHLEN[kennzahl] ? KENNZAHLEN[kennzahl].einheit : 'zahl';
   if (einheit === 'prozent') return (wert * 100).toFixed(1) + ' %';
   if (einheit === 'faktor') return wert.toFixed(2) + '-fach';
   if (einheit === 'jahre') return wert.toFixed(1) + ' Jahre';
-  if (einheit === 'chf') return 'CHF ' + wert.toLocaleString('de-CH', { maximumFractionDigits: 2 });
+  if (einheit === 'chf') return 'CHF ' + formatiereBetrag(wert);
   return String(wert);
 }
 

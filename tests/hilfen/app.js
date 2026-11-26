@@ -110,9 +110,3 @@ export function erstelleAntrag(fenster, abweichungen = {}) {
     w.kreditbetrag, w.laufzeitMonate, w.zinssatz, w.alter
   );
 }
-
-/** Reduziert einen formatierten Betrag auf Ziffern und Dezimalpunkt, damit der
- *  Vergleich unabhängig vom ICU-Tausendertrennzeichen von de-CH funktioniert. */
-export function nurZahlentext(text) {
-  return String(text).replace(/[^0-9.]/g, '');
-}

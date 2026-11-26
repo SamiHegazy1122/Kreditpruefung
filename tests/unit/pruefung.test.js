@@ -2,7 +2,7 @@
    (zusätzlich die im Diagramm nicht aufgeführten Hilfsfunktionen formatiereWert
    und bezeichnungKennzahl, die von ui.js mitverwendet werden). */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { starteApp, erstelleAntrag, nurZahlentext } from '../hilfen/app.js';
+import { starteApp, erstelleAntrag } from '../hilfen/app.js';
 
 let fenster;
 let schliesse;
@@ -296,12 +296,9 @@ describe('formatiereWert', () => {
     expect(fenster.formatiereWert('alterBeiKreditende', 50)).toBe('50.0 Jahre');
   });
 
-  it('stellt Beträge mit CHF-Präfix dar', () => {
-    const text = fenster.formatiereWert('monatsrate', 1448.4111704758695);
-    /* Das Tausendertrennzeichen von de-CH hängt von der ICU-Version ab,
-       darum wird nur auf Präfix und Ziffernfolge geprüft. */
-    expect(text.startsWith('CHF ')).toBe(true);
-    expect(nurZahlentext(text)).toBe('1448.41');
+  it('stellt Beträge mit CHF-Präfix und Apostroph als Tausendertrennzeichen dar', () => {
+    expect(fenster.formatiereWert('monatsrate', 1448.4111704758695)).toBe('CHF 1’448.41');
+    expect(fenster.formatiereWert('kreditbetrag', 150000)).toBe('CHF 150’000');
   });
 
   it('stellt fehlende und nicht endliche Werte als "-" dar', () => {
@@ -313,6 +310,39 @@ describe('formatiereWert', () => {
 
   it('gibt Zahlen zu unbekannten Kennzahlen unformatiert aus', () => {
     expect(fenster.formatiereWert('gibtsNicht', 5)).toBe('5');
+  });
+});
+
+describe('formatiereBetrag', () => {
+  it('gruppiert Tausender mit einem Apostroph', () => {
+    expect(fenster.formatiereBetrag(1000)).toBe('1’000');
+    expect(fenster.formatiereBetrag(150000)).toBe('150’000');
+    expect(fenster.formatiereBetrag(1000000)).toBe('1’000’000');
+  });
+
+  it('gruppiert erst ab vier Stellen', () => {
+    expect(fenster.formatiereBetrag(0)).toBe('0');
+    expect(fenster.formatiereBetrag(999)).toBe('999');
+  });
+
+  it('rundet auf zwei Nachkommastellen und lässt nachgestellte Nullen weg', () => {
+    expect(fenster.formatiereBetrag(1448.4111704758695)).toBe('1’448.41');
+    expect(fenster.formatiereBetrag(1234.5)).toBe('1’234.5');
+    expect(fenster.formatiereBetrag(1234.567)).toBe('1’234.57');
+    expect(fenster.formatiereBetrag(0.004)).toBe('0');
+  });
+
+  it('stellt negative Beträge mit Vorzeichen dar', () => {
+    expect(fenster.formatiereBetrag(-2500.75)).toBe('-2’500.75');
+    expect(fenster.formatiereBetrag(-999)).toBe('-999');
+  });
+
+  it('ist unabhängig von der Locale der Laufzeitumgebung', () => {
+    /* Regressionsschutz: toLocaleString('de-CH') lieferte je nach ICU-Version
+       ein anderes Tausendertrennzeichen und machte die Anzeige unvorhersehbar. */
+    const text = fenster.formatiereBetrag(1234567.891);
+    expect(text).toBe('1’234’567.89');
+    expect(text).not.toContain(',');
   });
 });
 
