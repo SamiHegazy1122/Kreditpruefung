@@ -80,6 +80,7 @@ function zeigeResultat(ergebnis) {
       tbody.appendChild(tr);
     });
 
+  zeigeVerlauf(ergebnis);
   zeigeBerechnungsschritte(ergebnis);
   zeigeView('view-resultat');
 }
@@ -92,6 +93,64 @@ function zeigeBerechnungsschritte(ergebnis) {
     li.textContent = text;
     liste.appendChild(li);
   });
+}
+
+/* ---------- Verlauf ueber die Laufzeit ---------- */
+
+/* Abstand der x-Beschriftung in Monaten: ab zwei Jahren wird in Jahren beschriftet */
+function laufzeitSchritt(anzahlMonate) {
+  if (anzahlMonate < 24) return Math.max(1, Math.ceil(anzahlMonate / 6));
+  return Math.ceil(anzahlMonate / 12 / 8) * 12;
+}
+
+function zeigeVerlauf(ergebnis) {
+  const plan = ergebnis.tilgungsplan;
+  const hinweis = document.getElementById('verlauf-hinweis');
+
+  if (!plan || plan.length === 0) {
+    document.getElementById('diagramm-restschuld').innerHTML = '';
+    document.getElementById('diagramm-zinsen').innerHTML = '';
+    hinweis.textContent = 'Für den eingegebenen Kreditbetrag bzw. die Laufzeit kann '
+      + 'kein Verlauf dargestellt werden.';
+    return;
+  }
+
+  /* Monat 0 wird vorangestellt, damit beide Diagramme beim Kreditstart beginnen */
+  const monate = [0].concat(plan.map(zeile => zeile.monat));
+  const restschuld = [plan[0].restschuld + plan[0].tilgung]
+    .concat(plan.map(zeile => zeile.restschuld));
+  const zins = [plan[0].zins].concat(plan.map(zeile => zeile.zins));
+  const tilgung = [plan[0].tilgung].concat(plan.map(zeile => zeile.tilgung));
+
+  const inJahren = plan.length >= 24;
+  const achse = {
+    xTitel: inJahren ? 'Jahre' : 'Monate',
+    xSchritt: laufzeitSchritt(plan.length),
+    formatX: wert => String(inJahren ? wert / 12 : wert),
+    formatY: wert => formatiereWert('monatsrate', wert)
+  };
+
+  hinweis.textContent = 'Gesamte Zinszahlungen über die Laufzeit: '
+    + formatiereWert('kreditbetrag', gesamtzinsen(plan))
+    + (ergebnis.empfohlen
+      ? ''
+      : ' – hypothetischer Verlauf, der Kredit wird nicht empfohlen.');
+
+  zeigeDiagramm('diagramm-restschuld', Object.assign({
+    titel: 'Entwicklung der Restschuld über die Laufzeit',
+    xWerte: monate,
+    reihen: [{ name: 'Restschuld', werte: restschuld, art: 'linie', farbe: '#2c3e50' }]
+  }, achse));
+
+  zeigeDiagramm('diagramm-zinsen', Object.assign({
+    titel: 'Aufteilung der Monatsrate in Zinsanteil und Tilgungsanteil',
+    xWerte: monate,
+    gestapelt: true,
+    reihen: [
+      { name: 'Zinsanteil', werte: zins, art: 'flaeche', farbe: '#a55' },
+      { name: 'Tilgungsanteil', werte: tilgung, art: 'flaeche', farbe: '#5a5' }
+    ]
+  }, achse));
 }
 
 /* ---------- Regelwerk ---------- */

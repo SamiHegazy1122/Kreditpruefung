@@ -73,6 +73,7 @@ function begruende(regel, kennzahlen) {
 
 function pruefeKredit(antrag, regeln) {
   const kennzahlen = berechneKennzahlen(antrag);
+  const plan = tilgungsplan(antrag.kreditbetrag, antrag.zinssatz, antrag.laufzeitMonate);
   const anwendbar = regeln.filter(r => r.giltFuer === 'beide' || r.giltFuer === antrag.typ);
 
   const begruendung = [];
@@ -89,6 +90,8 @@ function pruefeKredit(antrag, regeln) {
     'Monatsrate (Annuität) aus Kreditbetrag ' + formatiereWert('kreditbetrag', antrag.kreditbetrag)
       + ', Laufzeit ' + antrag.laufzeitMonate + ' Monate und Zinssatz ' + antrag.zinssatz + ' % = '
       + formatiereWert('monatsrate', kennzahlen.monatsrate),
+    'Gesamte Zinszahlungen über die Laufzeit = Summe aller Zinsanteile = '
+      + formatiereWert('kreditbetrag', gesamtzinsen(plan)),
     'Kalkulatorische Belastung bestehender Kredite = '
       + formatiereWert('vermoegen', antrag.bestehendeKredite) + ' x '
       + (SATZ_BESTEHENDE_KREDITE * 100).toFixed(1) + ' % / 12 = '
@@ -117,6 +120,7 @@ function pruefeKredit(antrag, regeln) {
     kennzahlen,
     begruendung,
     schritte,
-    empfohlen ? kennzahlen.monatsrate : null
+    empfohlen ? kennzahlen.monatsrate : null,
+    plan
   );
 }
