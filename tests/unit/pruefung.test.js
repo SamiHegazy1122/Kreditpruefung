@@ -240,33 +240,40 @@ describe('pruefeKredit - Regelauswahl nach Antragstyp', () => {
 });
 
 describe('pruefeKredit - Berechnungsschritte', () => {
-  it('dokumentiert für Privatpersonen zehn Schritte inklusive Alter bei Kreditende', () => {
+  it('dokumentiert für Privatpersonen elf Schritte inklusive Alter bei Kreditende', () => {
     const ergebnis = fenster.pruefeKredit(erstelleAntrag(fenster), fenster.standardRegeln());
 
-    expect(ergebnis.schritte).toHaveLength(10);
+    expect(ergebnis.schritte).toHaveLength(11);
     expect(ergebnis.schritte.at(-1)).toContain('Alter bei Kreditende');
     expect(ergebnis.schritte.every(text => text.length > 0)).toBe(true);
   });
 
-  it('dokumentiert für Unternehmen neun Schritte ohne Altersschritt', () => {
+  it('dokumentiert für Unternehmen zehn Schritte ohne Altersschritt', () => {
     const ergebnis = fenster.pruefeKredit(unternehmensAntrag(), fenster.standardRegeln());
 
-    expect(ergebnis.schritte).toHaveLength(9);
+    expect(ergebnis.schritte).toHaveLength(10);
     expect(ergebnis.schritte.join('\n')).not.toContain('Alter bei Kreditende');
   });
 
   it('nennt die Schritte in der Reihenfolge der Berechnung', () => {
     const schritte = fenster.pruefeKredit(erstelleAntrag(fenster), fenster.standardRegeln()).schritte;
 
-    expect(schritte[0]).toContain('Monatszinssatz');
-    expect(schritte[1]).toContain('Monatsrate');
-    expect(schritte[2]).toContain('bestehender Kredite');
-    expect(schritte[3]).toContain('Monatsbelastung');
-    expect(schritte[4]).toContain('Jahresbelastung');
-    expect(schritte[5]).toContain('Belastungsquote');
-    expect(schritte[6]).toContain('Verschuldungsquote');
-    expect(schritte[7]).toContain('Eigenmittelquote');
-    expect(schritte[8]).toContain('Freies Einkommen');
+    const erwarteteReihenfolge = [
+      'Monatszinssatz',
+      'Monatsrate',
+      'Zinszahlungen',
+      'bestehender Kredite',
+      'Monatsbelastung',
+      'Jahresbelastung',
+      'Belastungsquote',
+      'Verschuldungsquote',
+      'Eigenmittelquote',
+      'Freies Einkommen',
+      'Alter bei Kreditende'
+    ];
+    erwarteteReihenfolge.forEach((stichwort, index) => {
+      expect(schritte[index], 'Schritt ' + (index + 1)).toContain(stichwort);
+    });
   });
 
   it('weist den Monatszinssatz mit vier Dezimalstellen aus', () => {

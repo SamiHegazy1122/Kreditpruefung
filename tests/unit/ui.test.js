@@ -256,19 +256,19 @@ describe('zeigeBerechnungsschritte', () => {
 
     const eintraege = [...feld('schritte').querySelectorAll('li')].map(li => li.textContent);
     expect(eintraege).toEqual(ergebnis.schritte);
-    expect(eintraege).toHaveLength(10);
+    expect(eintraege).toHaveLength(11);
   });
 
   it('wird von zeigeResultat mitaufgerufen', () => {
     fenster.zeigeResultat(privatErgebnis());
-    expect(feld('schritte').querySelectorAll('li')).toHaveLength(10);
+    expect(feld('schritte').querySelectorAll('li')).toHaveLength(11);
   });
 
   it('ersetzt die Schritte bei einem erneuten Aufruf', () => {
     fenster.zeigeBerechnungsschritte(privatErgebnis());
     fenster.zeigeBerechnungsschritte(unternehmensErgebnis());
 
-    expect(feld('schritte').querySelectorAll('li')).toHaveLength(9);
+    expect(feld('schritte').querySelectorAll('li')).toHaveLength(10);
   });
 });
 
