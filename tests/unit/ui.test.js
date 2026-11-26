@@ -134,6 +134,22 @@ describe('leseAntrag', () => {
     expect(antrag.einkommen).toBe(0);
     expect(antrag.vermoegen).toBe(0);
   });
+
+  it('gibt keine unendlichen Werte an die Berechnung weiter', () => {
+    feld('kreditbetrag').value = '1e999';
+    expect(fenster.leseAntrag('privat').kreditbetrag).toBe(0);
+  });
+
+  it('behält eine eingegebene 0 als 0 und negative Werte als negativ', () => {
+    feld('bestehendeKredite').value = '0';
+    feld('wohnkosten').value = '-50';
+
+    const antrag = fenster.leseAntrag('privat');
+    expect(antrag.bestehendeKredite).toBe(0);
+    /* Negative Eingaben blockiert die HTML5-Validierung beim Absenden,
+       leseAntrag selbst verfälscht sie nicht. */
+    expect(antrag.wohnkosten).toBe(-50);
+  });
 });
 
 describe('Formular absenden', () => {

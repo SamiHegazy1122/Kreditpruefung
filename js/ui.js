@@ -10,8 +10,12 @@ function zeigeView(id) {
   document.getElementById(id).classList.remove('versteckt');
 }
 
+/* Liest ein Zahlenfeld. Leere, unlesbare und unendliche Eingaben gelten als 0.
+   Bewusst isFinite statt "|| 0": damit bleibt eine eingegebene 0 eine 0 und ein
+   Wert wie 1e999 wird nicht als Infinity in die Berechnung weitergegeben. */
 function zahl(id) {
-  return parseFloat(document.getElementById(id).value) || 0;
+  const wert = parseFloat(document.getElementById(id).value);
+  return isFinite(wert) ? wert : 0;
 }
 
 /* ---------- Kreditpruefung ---------- */
